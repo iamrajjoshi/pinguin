@@ -3,12 +3,12 @@ package router
 import (
 	"github.com/iamrajjoshi/pinguin/internal/api/handlers"
 	"github.com/iamrajjoshi/pinguin/internal/monitor"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
 
-func New(db *sqlx.DB) *echo.Echo {
+func New(db *pgxpool.Pool) *echo.Echo {
 	// Create new echo instance
 	e := echo.New()
 
@@ -29,7 +29,7 @@ func New(db *sqlx.DB) *echo.Echo {
 		monitors.POST("", h.CreateMonitor)
 		monitors.GET("", h.ListMonitors)
 		monitors.GET("/:id", h.GetMonitor)
-		// TODO(iamrajjoshi): Add checks
+		// TODO: Add checks
 	}
 
 	return e

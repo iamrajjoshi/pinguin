@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/iamrajjoshi/pinguin/internal/errors"
 	store "github.com/iamrajjoshi/pinguin/internal/store/models"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type MonitorService interface {
@@ -19,10 +19,10 @@ type MonitorService interface {
 }
 
 type PostgresMonitorService struct {
-	db *sqlx.DB
+	db *pgxpool.Pool
 }
 
-func NewMonitorService(db *sqlx.DB) *PostgresMonitorService {
+func NewMonitorService(db *pgxpool.Pool) *PostgresMonitorService {
 	return &PostgresMonitorService{db: db}
 }
 
@@ -32,7 +32,7 @@ func (s *PostgresMonitorService) Create(ctx context.Context, monitor *store.Moni
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at, updated_at`
 
-	return s.db.QueryRowContext(ctx, query,
+	return s.db.QueryRow(ctx, query,
 		monitor.URL,
 		monitor.Name,
 		monitor.Interval,
@@ -44,7 +44,15 @@ func (s *PostgresMonitorService) Get(ctx context.Context, id uuid.UUID) (*store.
 	monitor := &store.Monitor{}
 	query := `SELECT * FROM monitors WHERE id = $1`
 
-	err := s.db.GetContext(ctx, monitor, query, id)
+	err := s.db.QueryRow(ctx, query, id).Scan(
+		&monitor.ID,
+		&monitor.URL,
+		&monitor.Name,
+		&monitor.Interval,
+		&monitor.Enabled,
+		&monitor.CreatedAt,
+		&monitor.UpdatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -55,10 +63,20 @@ func (s *PostgresMonitorService) List(ctx context.Context) ([]store.Monitor, err
 	var monitors []store.Monitor
 	query := `SELECT * FROM monitors ORDER BY created_at DESC`
 
-	err := s.db.SelectContext(ctx, &monitors, query)
+	rows, err := s.db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var monitor store.Monitor
+		if err := rows.Scan(&monitor.ID, &monitor.URL, &monitor.Name, &monitor.Interval, &monitor.Enabled, &monitor.CreatedAt, &monitor.UpdatedAt); err != nil {
+			return nil, err
+		}
+		monitors = append(monitors, monitor)
+	}
+
 	return monitors, nil
 }
 
@@ -68,7 +86,7 @@ func (s *PostgresMonitorService) Update(ctx context.Context, monitor *store.Moni
 		SET url = $1, name = $2, interval = $3, enabled = $4, updated_at = $5
 		WHERE id = $6`
 
-	result, err := s.db.ExecContext(ctx, query,
+	result, err := s.db.Exec(ctx, query,
 		monitor.URL,
 		monitor.Name,
 		monitor.Interval,
@@ -80,11 +98,7 @@ func (s *PostgresMonitorService) Update(ctx context.Context, monitor *store.Moni
 		return err
 	}
 
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
+	if result.RowsAffected() == 0 {
 		return errors.ErrNotFound
 	}
 	return nil
@@ -93,16 +107,12 @@ func (s *PostgresMonitorService) Update(ctx context.Context, monitor *store.Moni
 func (s *PostgresMonitorService) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM monitors WHERE id = $1`
 
-	result, err := s.db.ExecContext(ctx, query, id)
+	result, err := s.db.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}
 
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
+	if result.RowsAffected() == 0 {
 		return errors.ErrNotFound
 	}
 	return nil
