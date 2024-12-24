@@ -1,5 +1,4 @@
-# Base configuration (shared between dev and prod)
-version: '3.8'
+name: pinguin
 
 services:
   api:
@@ -7,10 +6,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - .:/opt/app/api
+    ports:
+      - "8080:8080"
     environment:
-      - REDIS_URL=redis://redis:6379
-      - DB_HOST=db
-      - DB_NAME=uptime
+      DB_HOST: db
+      DB_NAME: uptime
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_PORT: 5432
+      REDIS_URL: redis://redis:6379
     depends_on:
       - db
       - redis
@@ -20,11 +26,13 @@ services:
     image: timescale/timescaledb:latest-pg17
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: uptime
 
   redis:
     container_name: redis
@@ -35,3 +43,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  go-mod-cache:
