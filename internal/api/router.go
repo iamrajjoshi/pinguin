@@ -26,9 +26,14 @@ func New(db *pgxpool.Pool) *echo.Echo {
 	api := e.Group("/api")
 	{
 		monitors := api.Group("/monitors")
-		monitors.POST("", h.CreateMonitor)
-		monitors.GET("", h.ListMonitors)
-		monitors.GET("/:id", h.GetMonitor)
+
+		monitors.POST("", h.CreateMonitor) // /api/monitors
+
+		monitors.GET("", h.ListMonitors) // /api/monitors
+
+		monitors.PUT("/:id", h.UpdateMonitor) // /api/monitors/:id
+		monitors.GET("/:id", h.GetMonitor)    // /api/monitors/:id
+
 		// TODO: Add checks
 	}
 
