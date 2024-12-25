@@ -16,7 +16,7 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_PORT: 5432
-      REDIS_URL: redis://redis:6379
+      REDIS_ADDR: redis:6379
     depends_on:
       - db
       - redis
@@ -37,10 +37,11 @@ services:
   redis:
     container_name: redis
     image: redis:alpine
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
 
 volumes:
   postgres_data:
   redis_data:
-  go-mod-cache:
