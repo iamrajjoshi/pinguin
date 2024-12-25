@@ -33,3 +33,8 @@ migrate-down:
 # DB shell
 db-shell:
 	docker-compose exec db psql -U postgres -d uptime
+
+# Stop all services and remove volumes
+down-clean:
+	make down
+	make remove-volumes
