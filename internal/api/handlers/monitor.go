@@ -52,11 +52,13 @@ func (h *Handler) CreateMonitor(c echo.Context) error {
 }
 
 func (h *Handler) ListMonitors(c echo.Context) error {
-	monitors, err := h.monitorService.List(c.Request().Context())
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
-	}
-	return c.JSON(http.StatusOK, monitors)
+	// TODO: This would cause a SQL injection
+	// monitors, err := h.monitorService.GetGeneric(c.Request().Context())
+	// if err != nil {
+	// 	return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	// }
+	// return c.JSON(http.StatusOK, monitors)
+	return c.JSON(http.StatusOK, "ok")
 }
 
 func (h *Handler) GetMonitor(c echo.Context) error {

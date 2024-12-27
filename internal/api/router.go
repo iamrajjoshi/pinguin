@@ -2,13 +2,14 @@ package router
 
 import (
 	"github.com/iamrajjoshi/pinguin/internal/api/handlers"
+	"github.com/iamrajjoshi/pinguin/internal/check"
 	"github.com/iamrajjoshi/pinguin/internal/monitor"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
 
-func New(db *pgxpool.Pool) *echo.Echo {
+func New(db *pgxpool.Pool, monitorService *monitor.PostgresMonitorService, checkService *check.PostgresCheckService) *echo.Echo {
 	// Create new echo instance
 	e := echo.New()
 
@@ -18,7 +19,6 @@ func New(db *pgxpool.Pool) *echo.Echo {
 	e.Use(echomiddleware.CORS())
 
 	// Initialize services
-	monitorService := monitor.NewMonitorService(db)
 
 	// Register handlers
 	h := handlers.NewHandler(monitorService)

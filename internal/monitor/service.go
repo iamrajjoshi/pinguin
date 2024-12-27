@@ -14,7 +14,8 @@ import (
 type MonitorService interface {
 	Create(ctx context.Context, monitor *store.Monitor) error
 	Get(ctx context.Context, id uuid.UUID) (*store.Monitor, error)
-	List(ctx context.Context) ([]store.Monitor, error)
+	GetManyWithStrings(ctx context.Context, ids []string) ([]store.Monitor, error)
+	GetGeneric(ctx context.Context, filters ...string) ([]store.Monitor, error)
 	Update(ctx context.Context, monitor *store.Monitor) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
@@ -60,7 +61,7 @@ func (s *PostgresMonitorService) Get(ctx context.Context, id uuid.UUID) (*store.
 	return monitor, nil
 }
 
-func (s *PostgresMonitorService) List(ctx context.Context, filters ...string) ([]store.Monitor, error) {
+func (s *PostgresMonitorService) GetGeneric(ctx context.Context, filters ...string) ([]store.Monitor, error) {
 	var monitors []store.Monitor
 	query := `SELECT * FROM monitors`
 
@@ -90,6 +91,17 @@ func (s *PostgresMonitorService) List(ctx context.Context, filters ...string) ([
 			return nil, err
 		}
 		monitors = append(monitors, monitor)
+	}
+
+	return monitors, nil
+}
+
+func (s *PostgresMonitorService) GetManyWithStrings(ctx context.Context, ids []string) ([]store.Monitor, error) {
+	whereClause := "id IN (" + strings.Join(ids, ",") + ")"
+
+	monitors, err := s.GetGeneric(ctx, whereClause)
+	if err != nil {
+		return nil, err
 	}
 
 	return monitors, nil
