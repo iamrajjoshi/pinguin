@@ -103,6 +103,11 @@ func (s *Scheduler) Run(ctx context.Context) error {
 				continue
 			}
 
+			// If no monitors to run, skip
+			if len(monitorIDs) == 0 {
+				continue
+			}
+
 			// Get all monitors
 			// TODO: Cache this?
 			monitors, err := s.monitorService.GetManyWithStrings(ctx, monitorIDs)
