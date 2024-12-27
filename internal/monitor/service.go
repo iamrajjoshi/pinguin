@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -59,11 +60,25 @@ func (s *PostgresMonitorService) Get(ctx context.Context, id uuid.UUID) (*store.
 	return monitor, nil
 }
 
-func (s *PostgresMonitorService) List(ctx context.Context) ([]store.Monitor, error) {
+func (s *PostgresMonitorService) List(ctx context.Context, filters ...string) ([]store.Monitor, error) {
 	var monitors []store.Monitor
-	query := `SELECT * FROM monitors ORDER BY created_at DESC`
+	query := `SELECT * FROM monitors`
 
-	rows, err := s.db.Query(ctx, query)
+	// Build WHERE clause from filters
+	var whereConditions []string
+	var args []interface{}
+	for i, filter := range filters {
+		whereConditions = append(whereConditions, filter)
+		args = append(args, i+1)
+	}
+
+	if len(whereConditions) > 0 {
+		query += ` WHERE ` + strings.Join(whereConditions, " AND ")
+	}
+
+	query += ` ORDER BY created_at DESC`
+
+	rows, err := s.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
