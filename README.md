@@ -4,7 +4,8 @@ Pinguin is an uptime monitoring tool for your web services written in Go.
 
 This is very much a work in progress. My main motivation for writing this is to learn Go and to build something useful.
 
-> [!CAUTION] Currently, there is no frontend for Pinguin, but it is coming soon.
+> [!CAUTION]
+> Currently, there is no frontend for Pinguin, but it is coming soon.
 
 ## Requirements
 
@@ -13,7 +14,8 @@ This is very much a work in progress. My main motivation for writing this is to 
 
 ## How to Install
 
-> [!NOTE]  This is a work in progress. Ideally, this should be a single docker compose-file or a docker image.
+> [!NOTE]
+> This is a work in progress. Ideally, this should be a single docker compose-file or a docker image.
 
 To start Pinguin:
 
