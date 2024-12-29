@@ -50,10 +50,10 @@ sequenceDiagram
     participant W as Worker
     participant DB as PostgreSQL
     
-    Note over S,DB: Monitor Creation Flow
+    Note over S,R: Monitor Creation Flow
     S->>R: Add monitor to sorted set (ZAdd)<br/>with next check time as score
     
-    Note over S,DB: Scheduling Flow
+    Note over S,R: Scheduling Flow
     loop Every Second
         S->>R: Check sorted set for due monitors<br/>(ZRangeByScore)
         R-->>S: Return due monitor IDs
