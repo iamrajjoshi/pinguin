@@ -1,2 +1,2 @@
 brew "make"
-brew "golang-migrate" 
+brew "golang-migrate"

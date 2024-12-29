@@ -3,34 +3,71 @@
 Pinguin is an uptime monitoring tool for your web services written in Go.
 
 This is very much a work in progress. My main motivation for writing this is to learn Go and to build something useful.
-I chose Postgres and TimescaleDB for the database because I am familiar with Postgres and I have heard good things about TimescaleDB.
 
-I also decided to use Redis for the data pipeline because I am familiar with Redis and wanted to explore how sorted sets could be used to implement a scheduler. This might be overkill for this use case, but I wanted to try it out.
+> [!CAUTION] Currently, there is no frontend for Pinguin, but it is coming soon.
 
-## Requirements (wip)
+## Requirements
 
 - docker
 - make
-- golang-migrate
 
 ## How to Install
 
-Should be a single docker compose file that can be used to run the server and redis.
+> [!NOTE]  This is a work in progress. Ideally, this should be a single docker compose-file or a docker image.
 
-To turn up the development environment:
+To start Pinguin:
 
-```bash
-make up
-```
+1. Clone the repository
 
-## Monitoring Architecture
+2. Install dependencies  
+   This will install the dependencies listed in the [Brewfile](Brewfile).
 
-Pinguin uses Redis as its primary data pipeline for monitoring.
+   ```bash
+   make install
+   ```
+
+3. Start the server  
+   This will use the docker compose file to spin up 3 containers:
+
+   - `db`: TimescaleDB
+   - `redis`: Redis
+   - `server`: Pinguin server
+
+   ```bash
+   make up
+   ```
+
+## Pinguin Architecture
+
+Pinguin stores monitor data in [TimescaleDB](https://www.timescale.com/) (which is a Postgres extension).
+
+Pinguin uses Redis as its primary data pipeline for monitoring. It uses a sorted set to store the next check time for each monitor and a list to store the monitors to be checked.
 
 ```mermaid
-graph LR
-    A[Scheduler] -->|ZAdd| B[Sorted Set<br>'monitor:scheduled']
-    A -->|HSet| C[Hash<br>'monitor:jobs']
-    A -->|LPush| D[List<br>'monitor:queue']
-    E[Worker] -->|BRPop| D
+sequenceDiagram
+    participant S as Scheduler
+    participant R as Redis
+    participant W as Worker
+    participant DB as PostgreSQL
+    
+    Note over S,DB: Monitor Creation Flow
+    S->>R: Add monitor to sorted set (ZAdd)<br/>with next check time as score
+    
+    Note over S,DB: Scheduling Flow
+    loop Every Second
+        S->>R: Check sorted set for due monitors<br/>(ZRangeByScore)
+        R-->>S: Return due monitor IDs
+        S->>R: Push monitor IDs to work queue<br/>(LPush)
+        S->>R: Reschedule monitor with new time<br/>(ZAdd)
+    end
+
+    Note over W,DB: Worker Processing Flow
+    loop Continuous
+        W->>R: Pop monitor from queue<br/>(BRPop)
+        R-->>W: Return monitor ID
+        W->>DB: Get monitor details
+        DB-->>W: Return monitor config
+        W->>W: Perform HTTP check
+        W->>DB: Save check results
+    end
 ```

@@ -1,5 +1,9 @@
 .PHONY: up down build test migrate
 
+# Install dependencies
+install:
+	brew bundle
+
 # Start all services
 up:
 	docker-compose up --build -d
