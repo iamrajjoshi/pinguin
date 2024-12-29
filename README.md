@@ -61,7 +61,7 @@ sequenceDiagram
         S->>R: Reschedule monitor with new time<br/>(ZAdd)
     end
 
-    Note over W,DB: Worker Processing Flow
+    Note over R,DB: Worker Processing Flow
     loop Continuous
         W->>R: Pop monitor from queue<br/>(BRPop)
         R-->>W: Return monitor ID
