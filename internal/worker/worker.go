@@ -3,7 +3,6 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -45,15 +44,11 @@ func (w *Worker) Run(ctx context.Context) error {
 			// Pop job from queue
 			result, err := w.rdb.BRPop(ctx, 0, w.queueKey).Result()
 			if err != nil {
+				log.Println("Error getting job from queue:", err)
 				continue
 			}
 
-			var strMonitorID string
-			if err := json.Unmarshal([]byte(result[1]), &strMonitorID); err != nil {
-				continue
-			}
-
-			println("Worker", w.id, "Job", strMonitorID)
+			var strMonitorID string = result[1]
 
 			monitorID, err := uuid.Parse(strMonitorID)
 			if err != nil {

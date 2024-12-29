@@ -2,21 +2,28 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
+	"github.com/iamrajjoshi/pinguin/internal/check"
 	service "github.com/iamrajjoshi/pinguin/internal/monitor"
+	"github.com/iamrajjoshi/pinguin/internal/scheduler"
 	store "github.com/iamrajjoshi/pinguin/internal/store/models"
 )
 
 type Handler struct {
 	monitorService *service.PostgresMonitorService
+	checkService   *check.PostgresCheckService
+	scheduler      *scheduler.Scheduler
 }
 
-func NewHandler(ms *service.PostgresMonitorService) *Handler {
+func NewHandler(ms *service.PostgresMonitorService, cs *check.PostgresCheckService, scheduler *scheduler.Scheduler) *Handler {
 	return &Handler{
 		monitorService: ms,
+		checkService:   cs,
+		scheduler:      scheduler,
 	}
 }
 
@@ -47,6 +54,7 @@ func (h *Handler) CreateMonitor(c echo.Context) error {
 	}
 
 	// TODO: Schedule the monitor
+	h.scheduler.Schedule(c.Request().Context(), monitor.ID, time.Duration(monitor.Interval)*time.Second)
 
 	return c.JSON(http.StatusCreated, monitor)
 }

@@ -38,15 +38,6 @@ func main() {
 	monitorService := monitor.NewMonitorService(db)
 	checkService := check.NewCheckService(db)
 
-	// Start Echo server
-	e := router.New(db, monitorService, checkService)
-
-	go func() {
-		if err := e.Start(":8080"); err != nil {
-			e.Logger.Info("shutting down the server")
-		}
-	}()
-
 	// Initialize Redis client
 	rdb := redis.NewClient(&redis.Options{
 		Addr: os.Getenv("REDIS_ADDR"),
@@ -72,6 +63,15 @@ func main() {
 			}
 		}(i)
 	}
+
+	// Start Echo server
+	e := router.New(db, monitorService, checkService, scheduler)
+
+	go func() {
+		if err := e.Start(":8080"); err != nil {
+			e.Logger.Info("shutting down the server")
+		}
+	}()
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)

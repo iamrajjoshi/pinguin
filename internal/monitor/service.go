@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -66,20 +67,18 @@ func (s *PostgresMonitorService) GetGeneric(ctx context.Context, filters ...stri
 	query := `SELECT * FROM monitors`
 
 	// Build WHERE clause from filters
+	// TODO: Fix SQL injection
 	var whereConditions []string
-	var args []interface{}
-	for i, filter := range filters {
-		whereConditions = append(whereConditions, filter)
-		args = append(args, i+1)
-	}
 
-	if len(whereConditions) > 0 {
+	if len(whereConditions) == 1 {
+		query += ` WHERE ` + whereConditions[0]
+	} else if len(whereConditions) > 1 {
 		query += ` WHERE ` + strings.Join(whereConditions, " AND ")
 	}
 
 	query += ` ORDER BY created_at DESC`
 
-	rows, err := s.db.Query(ctx, query, args...)
+	rows, err := s.db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,11 @@ func (s *PostgresMonitorService) GetGeneric(ctx context.Context, filters ...stri
 }
 
 func (s *PostgresMonitorService) GetManyWithStrings(ctx context.Context, ids []string) ([]store.Monitor, error) {
-	whereClause := "id IN (" + strings.Join(ids, ",") + ")"
+	quotedIds := make([]string, len(ids))
+	for i, id := range ids {
+		quotedIds[i] = fmt.Sprintf("'%s'", id)
+	}
+	whereClause := "id IN (" + strings.Join(quotedIds, ",") + ")"
 
 	monitors, err := s.GetGeneric(ctx, whereClause)
 	if err != nil {

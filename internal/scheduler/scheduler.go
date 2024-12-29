@@ -51,7 +51,7 @@ func (s *Scheduler) Schedule(ctx context.Context, monitorID uuid.UUID, interval 
 	nextRunPlusOffset := nextRun.Add(time.Duration(offset(monitorID.String(), int(interval.Seconds()))) * time.Second)
 
 	member := redis.Z{
-		Member: monitorID,
+		Member: monitorID.String(),
 		Score:  float64(nextRunPlusOffset.Unix()),
 	}
 
@@ -115,6 +115,8 @@ func (s *Scheduler) Run(ctx context.Context) error {
 				log.Println("Error getting monitors:", err)
 				continue
 			}
+
+			println("MONITORS", len(monitors))
 
 			for _, monitor := range monitors {
 				// Queue just the monitor ID
